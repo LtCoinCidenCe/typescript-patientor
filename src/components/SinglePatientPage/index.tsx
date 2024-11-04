@@ -6,6 +6,7 @@ import { Alert, Box, Typography } from "@mui/material";
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
 import TransgenderIcon from '@mui/icons-material/Transgender';
+import Entries from "./Entries";
 
 const SinglePatientPage = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +62,7 @@ const SinglePatientPage = (): JSX.Element => {
     <Typography>
       occupation: {patient.occupation}
     </Typography>
+    <Entries entries={patient.entries} />
   </Box>;
 };
 
