@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { Patient } from "../../types";
+import { Entry, Patient } from "../../types";
 import patients from "../../services/patients";
 import { useEffect, useState } from "react";
 import { Alert, Box, Typography } from "@mui/material";
@@ -7,6 +7,7 @@ import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
 import TransgenderIcon from '@mui/icons-material/Transgender';
 import Entries from "./Entries";
+import NewEntry from "./NewEntry";
 
 const SinglePatientPage = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +29,15 @@ const SinglePatientPage = (): JSX.Element => {
       }
     })();
   }, [id]);
+
+  const addEntryforPatient = (entry: Entry) => {
+    if (patient) {
+      setPatient({
+        ...patient,
+        entries: patient.entries.concat(entry)
+      });
+    }
+  };
 
   if (!id) {
     return <Alert severity="error">invalid url id</Alert>;
@@ -62,6 +72,7 @@ const SinglePatientPage = (): JSX.Element => {
     <Typography>
       occupation: {patient.occupation}
     </Typography>
+    <NewEntry addEntryforPatient={addEntryforPatient}></NewEntry>
     <Entries entries={patient.entries} />
   </Box>;
 };
