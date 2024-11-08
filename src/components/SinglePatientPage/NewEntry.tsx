@@ -1,5 +1,6 @@
 import { Alert, Box, Button, FormControl, TextField, Typography } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useState } from "react";
 import { Entry, HealthCheckEntry } from "../../types";
 import { useParams } from "react-router-dom";
@@ -11,6 +12,8 @@ type Props = { addEntryforPatient: (entry: Entry) => void };
 const NewEntry = ({ addEntryforPatient }: Props) => {
   const url = useParams();
   const [displayed, setDisplayed] = useState(false);
+  const [version, setVersion] = useState("Health Check");
+
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [specialist, setSpecialist] = useState("");
@@ -48,19 +51,39 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
     }
   };
 
+  const rotateVersion = () => {
+    switch (version) {
+      case "Health Check":
+        setVersion("Hospital");
+        break;
+      case "Hospital":
+        setVersion("Occupational Healthcare");
+        break;
+      case "Occupational Healthcare":
+        setVersion("Health Check");
+        break;
+      default:
+        throw new Error("something Went wrong");
+        break;
+    }
+  };
+
   return <Box sx={{ margin: "2em 0 2em 0", border: '1px dashed grey' }}>
-    <Typography variant="h5">New HealthCheck Entry</Typography>
+    <Typography variant="h5">New {version} Entry</Typography>
     <div><Button variant="outlined" onClick={() => setDisplayed(!displayed)}>{displayed ? "collapse" : "expand"}</Button></div>
     {displayed ?
       <>
         {errrrr.length > 0 ? <Alert severity="error">{errrrr}</Alert> : null}
-        <FormControl>
+        <FormControl fullWidth>
           <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Description" value={description} onChange={(event) => setDescription(event.currentTarget.value)} />
           <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Date" value={date} onChange={(event) => setDate(event.currentTarget.value)} />
           <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Specialist" value={specialist} onChange={(event) => setSpecialist(event.currentTarget.value)} />
           <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Healthcheck Rating" value={rating} onChange={(event) => setRating(event.currentTarget.value)} />
           <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Diagnosis Codes" value={codes} onChange={(event) => setCodes(event.currentTarget.value)} />
-          <Button variant="contained" endIcon={<SendIcon />} onClick={onFormSubmit} disabled={!filledReady}>Add</Button>
+          <Box display="flex" justifyContent="space-between">
+            <Button variant="contained" endIcon={<SendIcon />} onClick={onFormSubmit} disabled={!filledReady}>Add</Button>
+            <Button variant="outlined" color="secondary" endIcon={<ArrowForwardIcon />} onClick={rotateVersion}>Switch</Button>
+          </Box>
         </FormControl>
       </>
       : null}
