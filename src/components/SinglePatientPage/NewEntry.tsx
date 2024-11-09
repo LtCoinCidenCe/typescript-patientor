@@ -1,15 +1,15 @@
-import { Alert, Box, Button, FormControl, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, FormControl, FormLabel, InputLabel, MenuItem, Select, SelectChangeEvent, TextField, Typography } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useState } from "react";
-import { Entry, HealthCheckEntry, HospitalEntry, OccupationalHealthcareEntry } from "../../types";
+import { Diagnosis, Entry, HealthCheckEntry, HospitalEntry, OccupationalHealthcareEntry } from "../../types";
 import { useParams } from "react-router-dom";
 import entries from "../../services/entries";
 import { AxiosError } from "axios";
 
-type Props = { addEntryforPatient: (entry: Entry) => void };
+type Props = { addEntryforPatient: (entry: Entry) => void, diagFacts: Diagnosis[] | undefined };
 
-const NewEntry = ({ addEntryforPatient }: Props) => {
+const NewEntry = ({ addEntryforPatient, diagFacts }: Props) => {
   const url = useParams();
   const [displayed, setDisplayed] = useState(false);
   const [version, setVersion] = useState("HealthCheck");
@@ -20,17 +20,17 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [specialist, setSpecialist] = useState("");
-  const [codes, setCodes] = useState("");
+  const [codes, setCodes] = useState<string[]>([]);
 
 
-  const [rating, setRating] = useState("");
+  const [rating, setRating] = useState(0);
   const [dischargeDate, setDischargeDate] = useState("");
   const [dischargeCriteria, setDischargeCriteria] = useState("");
   const [employerName, setEmployerName] = useState("");
   const [sickLeaveStart, setSickLeaveStart] = useState("");
   const [sickLeaveEnd, setSickLeaveEnd] = useState("");
 
-  const filledReady = description.length > 0 && date.length > 0 && specialist.length > 0 && rating.length > 0 && codes.length > 0;
+
   const onFormSubmit = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     console.log("onFormSubmit");
 
@@ -40,6 +40,9 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
       return;
     }
 
+    // const diagnosisCodes = codes.split(/\s*,\s*/);
+    const diagnosisCodes = codes;
+
     let newID;
     switch (version) {
       case "HealthCheck": {
@@ -47,9 +50,9 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
           description,
           date,
           specialist,
-          healthCheckRating: Number(rating),
+          healthCheckRating: rating,
           type: "HealthCheck",
-          diagnosisCodes: codes.split(/\s*,\s*/),
+          diagnosisCodes,
           // addddd: "addddd",
         };
         newID = newID2;
@@ -63,7 +66,7 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
           date,
           specialist,
           type: "Hospital",
-          diagnosisCodes: codes.split(/\s*,\s*/),
+          diagnosisCodes,
           discharge: {
             date: dischargeDate,
             criteria: dischargeCriteria
@@ -78,7 +81,7 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
           date,
           specialist,
           type: "OccupationalHealthcare",
-          diagnosisCodes: codes.split(/\s*,\s*/),
+          diagnosisCodes,
           employerName,
           sickLeave: sickLeaveStart.length > 0 && sickLeaveEnd.length > 0 ?
             {
@@ -107,6 +110,11 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
     }
   };
 
+  const onCodesSelectChange = (event: SelectChangeEvent<string[]>) => {
+    const vv = event.target.value;
+    setCodes(typeof vv === "string" ? vv.split(",") : vv);
+  };
+
   const rotateVersion = () => {
     switch (version) {
       case "HealthCheck":
@@ -131,31 +139,47 @@ const NewEntry = ({ addEntryforPatient }: Props) => {
       <>
         {errrrr.length > 0 ? <Alert severity="error">{errrrr}</Alert> : null}
         <FormControl fullWidth>
-          <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Description" value={description} onChange={(event) => setDescription(event.currentTarget.value)} />
-          <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Date" value={date} onChange={(event) => setDate(event.currentTarget.value)} />
-          <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Specialist" value={specialist} onChange={(event) => setSpecialist(event.currentTarget.value)} />
-          <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Diagnosis Codes" value={codes} onChange={(event) => setCodes(event.currentTarget.value)} />
+          <TextField margin="dense" variant="standard" label="Description" value={description} onChange={(event) => setDescription(event.currentTarget.value)} />
+          <TextField margin="dense" variant="standard" type="date" label="Date" InputLabelProps={{ shrink: true }} value={date} onChange={(event) => setDate(event.currentTarget.value)} />
+          <TextField margin="dense" variant="standard" label="Specialist" value={specialist} onChange={(event) => setSpecialist(event.currentTarget.value)} />
 
-          {version === "HealthCheck" ?
-            <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Healthcheck Rating" value={rating} onChange={(event) => setRating(event.currentTarget.value)} />
-            : null}
+          <FormControl fullWidth>
+            <InputLabel id="multiple-code-label" margin="dense" variant="standard">Diagnosis Codes</InputLabel>
+            <Select multiple labelId="multiple-code-label" margin="dense" variant="standard" value={codes} onChange={onCodesSelectChange}>
+              {diagFacts?.map(diag => <MenuItem key={diag.code} value={diag.code}>{diag.code}</MenuItem>)}
+            </Select>
+          </FormControl>
 
-          {version === "Hospital" ? <>
-            <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Discharge Date" value={dischargeDate} onChange={(event) => setDischargeDate(event.currentTarget.value)} />
-            <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Discharge Criteria" value={dischargeCriteria} onChange={(event) => setDischargeCriteria(event.currentTarget.value)} />
-          </>
-            : null}
+          <FormLabel sx={{ marginTop: "2em" }}>{version}</FormLabel>
 
-          {version === "Occupational Healthcare" ? <>
-            <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Employer Name" value={employerName} onChange={(event) => setEmployerName(event.currentTarget.value)} />
-            <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Sick Leave Start" value={sickLeaveStart} onChange={(event) => setSickLeaveStart(event.currentTarget.value)} />
-            <TextField sx={{ margin: "0.5em 0 0.5em 0" }} variant="standard" label="Sick Leave End" value={sickLeaveEnd} onChange={(event) => setSickLeaveEnd(event.currentTarget.value)} />
-          </>
-            : null}
+          <FormControl sx={{ marginLeft: "1em" }}>
+            {version === "HealthCheck" ? <>
+              <InputLabel id="healthcheck-rating-label" margin="dense" variant="standard">Healthcheck Rating</InputLabel>
+              <Select labelId="healthcheck-rating-label" margin="dense" variant="standard" value={rating} onChange={(event) => setRating(event.target.value as number)}>
+                <MenuItem value={0}>Healthy</MenuItem>
+                <MenuItem value={1}>Low Risk</MenuItem>
+                <MenuItem value={2}>High Risk</MenuItem>
+                <MenuItem value={3}>Critical Risk</MenuItem>
+              </Select>
+            </>
+              : null}
 
+            {version === "Hospital" ? <>
+              <TextField margin="dense" variant="standard" type="date" label="Discharge Date" InputLabelProps={{ shrink: true }} value={dischargeDate} onChange={(event) => setDischargeDate(event.currentTarget.value)} />
+              <TextField margin="dense" variant="standard" label="Discharge Criteria" value={dischargeCriteria} onChange={(event) => setDischargeCriteria(event.currentTarget.value)} />
+            </>
+              : null}
+
+            {version === "Occupational Healthcare" ? <>
+              <TextField margin="dense" variant="standard" label="Employer Name" value={employerName} onChange={(event) => setEmployerName(event.currentTarget.value)} />
+              <TextField margin="dense" variant="standard" type="date" label="Sick Leave Start" InputLabelProps={{ shrink: true }} value={sickLeaveStart} onChange={(event) => setSickLeaveStart(event.currentTarget.value)} />
+              <TextField margin="dense" variant="standard" type="date" label="Sick Leave End" InputLabelProps={{ shrink: true }} value={sickLeaveEnd} onChange={(event) => setSickLeaveEnd(event.currentTarget.value)} />
+            </>
+              : null}
+          </FormControl>
 
           <Box display="flex" justifyContent="space-between">
-            <Button variant="contained" endIcon={<SendIcon />} onClick={onFormSubmit} disabled={!filledReady}>Add</Button>
+            <Button variant="contained" endIcon={<SendIcon />} onClick={onFormSubmit}>Add</Button>
             <Button variant="outlined" color="secondary" endIcon={<ArrowForwardIcon />} onClick={rotateVersion}>Switch</Button>
           </Box>
         </FormControl>
